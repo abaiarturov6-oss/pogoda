@@ -1,0 +1,46 @@
+const CACHE_NAME = 'pogoda-shell-v2';
+const APP_SHELL = [
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './manifest.webmanifest',
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png'
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (event) => {
+  const requestUrl = new URL(event.request.url);
+  if (event.request.method !== 'GET' || requestUrl.origin !== self.location.origin) return;
+
+  event.respondWith((async () => {
+    const cached = await caches.match(event.request);
+    if (cached) {
+      fetch(event.request).then((response) => {
+        if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response));
+      }).catch(() => {});
+      return cached;
+    }
+    try {
+      const response = await fetch(event.request);
+      if (response.ok) (await caches.open(CACHE_NAME)).put(event.request, response.clone());
+      return response;
+    } catch (error) {
+      if (event.request.mode === 'navigate') return caches.match('./index.html');
+      throw error;
+    }
+  })());
+});

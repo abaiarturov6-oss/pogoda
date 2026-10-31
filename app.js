@@ -5,11 +5,14 @@ const hourlyList = document.querySelector('#hourly-list');
 const weekList = document.querySelector('#week-list');
 const favoriteButton = document.querySelector('#favorite-button');
 const unitToggle = document.querySelector('#unit-toggle');
+const installButton = document.querySelector('#install-button');
+const installHint = document.querySelector('#install-hint');
 
 let activeCity = 'Ысык-Көл';
 let weatherData = null;
 let isFahrenheit = false;
 let favorites = readFavorites();
+let installPrompt = null;
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -43,9 +46,37 @@ document.querySelector('#locate-button').addEventListener('click', () => {
   showStatus('Определяем ваше местоположение…');
   navigator.geolocation.getCurrentPosition(
     ({ coords }) => loadWeather('', coords.latitude, coords.longitude),
-    () => showStatus('Не удалось получить местоположение. Разрешите доступ к геолокации.'),
-    { timeout: 12000, maximumAge: 300000 }
+    (error) => {
+      if (error.code === error.PERMISSION_DENIED) showStatus('Разрешите браузеру доступ к местоположению, чтобы узнать погоду рядом с вами.');
+      else if (error.code === error.POSITION_UNAVAILABLE) showStatus('Не удалось определить местоположение устройства.');
+      else showStatus('Поиск местоположения занял слишком много времени. Попробуйте ещё раз.');
+    },
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 300000 }
   );
+});
+
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  installPrompt = event;
+});
+
+installButton.addEventListener('click', async () => {
+  if (installPrompt) {
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null;
+    return;
+  }
+  installHint.hidden = false;
+  installHint.textContent = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    ? 'Чтобы установить сайт на iPhone: нажмите «Поделиться» в Safari, затем «На экран Домой». '
+    : 'Откройте меню браузера и выберите «Установить приложение» или «Добавить на главный экран».';
+});
+
+window.addEventListener('appinstalled', () => {
+  installHint.hidden = false;
+  installHint.textContent = 'Погода установлена на телефон.';
+  installButton.hidden = true;
 });
 
 async function requestJson(url) {
@@ -55,17 +86,63 @@ async function requestJson(url) {
   return data;
 }
 
+async function resolvePlace(city) {
+  const normalized = city.toLocaleLowerCase('ru').replaceAll('ё', 'е').replace(/[^\p{L}\p{N}]/gu, '');
+  const issykKulAliases = ['ыссыккол', 'ысыккол', 'иссыккуль', 'иссыккул', 'issykul', 'issykkul', 'issykul'];
+  const isIssykKul = issykKulAliases.includes(normalized);
+  const searchName = isIssykKul ? 'Cholpon-Ata' : city;
+  const geocode = async (name, countryCode, language) => {
+    const params = new URLSearchParams({ name, count: '1', language, format: 'json' });
+    if (countryCode) params.set('countryCode', countryCode);
+    const result = await requestJson(`https://geocoding-api.open-meteo.com/v1/search?${params}`);
+    return result.results?.[0] || null;
+  };
+
+  let place = await geocode(searchName, null, 'ru');
+  if ((!place || place.country_code !== 'KG') && !isIssykKul) {
+    const localPlace = await geocode(transliterate(searchName), 'KG', 'en');
+    if (localPlace) place = localPlace;
+  }
+  if (!place) throw new Error('Город не найден. Проверьте название и попробуйте снова.');
+  if (isIssykKul) {
+    place.name = 'Ысык-Көл';
+    place.admin1 = 'Чолпон-Ата';
+    place.country = 'Кыргызстан';
+    place.country_code = 'KG';
+  }
+  return place;
+}
+
+function transliterate(value) {
+  const letters = {
+    а:'a', б:'b', в:'v', г:'g', д:'d', е:'e', ё:'yo', ж:'zh', з:'z', и:'i', й:'y', к:'k', л:'l', м:'m', н:'n', ң:'ng', о:'o', ө:'o', п:'p', р:'r', с:'s', т:'t', у:'u', ү:'u', ф:'f', х:'kh', ц:'ts', ч:'ch', ш:'sh', щ:'shch', ъ:'', ы:'y', ь:'', э:'e', ю:'yu', я:'ya'
+  };
+  return [...value.toLocaleLowerCase('ru')].map((letter) => letters[letter] ?? letter).join('');
+}
+
+async function fetchForecast(place) {
+  const params = new URLSearchParams({
+    latitude: String(place.latitude),
+    longitude: String(place.longitude),
+    current: 'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,wind_speed_10m',
+    hourly: 'temperature_2m,precipitation_probability,weather_code',
+    daily: 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max',
+    timezone: 'auto',
+    forecast_days: '7'
+  });
+  const forecast = await requestJson(`https://api.open-meteo.com/v1/forecast?${params}`);
+  return { place, current: forecast.current, hourly: forecast.hourly, daily: forecast.daily };
+}
+
 async function loadWeather(city, latitude, longitude) {
   form.classList.add('loading');
   showStatus('Загружаем прогноз погоды…');
   try {
-    const params = latitude !== undefined
-      ? new URLSearchParams({ latitude: String(latitude), longitude: String(longitude) })
-      : new URLSearchParams({ city });
-    weatherData = await requestJson(`/api/weather?${params}`);
-    activeCity = weatherData.place.name === 'Ысык-Көл'
-      ? 'Ысык-Көл'
-      : city || weatherData.place.name;
+    const place = latitude !== undefined
+      ? { name: 'Моё местоположение', latitude, longitude, country: '' }
+      : await resolvePlace(city);
+    weatherData = await fetchForecast(place);
+    activeCity = place.name === 'Ысык-Көл' ? 'Ысык-Көл' : city || place.name;
     updatePlace(weatherData.place);
     renderWeather();
     showStatus('');
@@ -78,7 +155,9 @@ async function loadWeather(city, latitude, longitude) {
 
 function updatePlace(place) {
   document.querySelector('#place-title').textContent = activeCity;
-  const details = [place.admin1, place.country].filter(Boolean).join(' · ');
+  const details = place.name === 'Моё местоположение'
+    ? 'Погода рядом с вами'
+    : [place.admin1, place.country].filter(Boolean).join(' · ');
   document.querySelector('#place-subtitle').textContent = details || 'Прогноз погоды';
   document.querySelector('#updated-label').textContent = `Обновлено ${formatTime(weatherData.current.time)}`;
   favoriteButton.classList.toggle('active', favorites.some((item) => item.city.toLocaleLowerCase() === activeCity.toLocaleLowerCase()));
@@ -198,3 +277,10 @@ function showStatus(message) {
 
 renderFavorites();
 loadWeather(activeCity);
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+  installButton.hidden = true;
+}

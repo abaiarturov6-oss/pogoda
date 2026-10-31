@@ -5,3 +5,7 @@
 
 .saved-city-open{padding:0;border:0;background:transparent;color:#536277;font:inherit}.saved-city-open:hover{color:#3d68d5}
 
+
+.install-button{height:36px;padding:0 11px;border:1px solid #dce6fa;border-radius:9px;background:#f3f6ff;color:#426fd7;font-size:10px;font-weight:600;white-space:nowrap}.install-button span{margin-right:4px;font-size:14px}.install-button:hover{background:#e8efff}.install-hint{margin:-8px 0 18px;padding:12px 15px;border:1px solid #dce6fa;border-radius:10px;background:#f3f6ff;color:#526987;font-size:11px;line-height:1.5}.install-hint[hidden]{display:none}
+@media(max-width:560px){.top-actions{gap:5px}.install-button{height:34px;padding:0 8px;font-size:9px}.location-button{padding:0 7px}}
+

@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#f4f7fb">
   <title>Погода — прогноз для вашего города</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -21,12 +24,14 @@
         <button type="submit">Найти</button>
       </form>
       <div class="top-actions">
+        <button class="install-button" id="install-button" type="button"><span>↓</span> Установить</button>
         <button class="unit-toggle" id="unit-toggle" type="button" aria-label="Переключить градусы Цельсия и Фаренгейта"><span class="unit-active">°C</span><span>°F</span></button>
-        <button class="location-button" id="locate-button" type="button"><span>⌖</span> Моё место</button>
+        <button class="location-button" id="locate-button" type="button" aria-label="Найти погоду рядом с вами"><span>⌖</span> Моё местоположение</button>
       </div>
     </header>
 
     <div class="content">
+      <div class="install-hint" id="install-hint" role="status" hidden></div>
       <section class="intro-row">
         <div><p class="eyebrow"><span class="live-dot"></span> ПРОГНОЗ ПОГОДЫ</p><h1 id="place-title">Ысык-Көл</h1><p class="subheading" id="place-subtitle">Кыргызстан · погода сейчас</p></div>
         <div class="updated"><span class="updated-icon">◷</span><span id="updated-label">Обновляем прогноз…</span></div>
