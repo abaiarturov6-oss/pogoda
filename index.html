@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f4f7fb">
+  <title>Погода — прогноз для вашего города</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="#"><span class="brand-mark">☀</span><span>погода<span class="brand-dot">.</span></span></a>
+      <form class="search" id="search-form">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input id="city-input" type="search" placeholder="Введите город или село" autocomplete="off" aria-label="Введите город или село">
+        <button type="submit">Найти</button>
+      </form>
+      <div class="top-actions">
+        <button class="unit-toggle" id="unit-toggle" type="button" aria-label="Переключить градусы Цельсия и Фаренгейта"><span class="unit-active">°C</span><span>°F</span></button>
+        <button class="location-button" id="locate-button" type="button"><span>⌖</span> Моё место</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <section class="intro-row">
+        <div><p class="eyebrow"><span class="live-dot"></span> ПРОГНОЗ ПОГОДЫ</p><h1 id="place-title">Ысык-Көл</h1><p class="subheading" id="place-subtitle">Кыргызстан · погода сейчас</p></div>
+        <div class="updated"><span class="updated-icon">◷</span><span id="updated-label">Обновляем прогноз…</span></div>
+      </section>
+
+      <section class="dashboard-grid" aria-label="Текущая погода и прогноз">
+        <article class="current-card">
+          <div class="current-top"><span class="card-kicker">СЕЙЧАС</span><button class="favorite-button" id="favorite-button" type="button" aria-label="Сохранить город">♡</button></div>
+          <div class="current-main"><div><div class="current-temp"><span id="current-temp">—</span><sup>°</sup></div><p class="condition" id="current-condition">Загружаем погоду…</p></div><div class="weather-art" id="current-icon" aria-hidden="true">⛅</div></div>
+          <p class="feels-like">Ощущается как <strong id="feels-like">—</strong></p>
+          <div class="current-divider"></div>
+          <div class="metrics">
+            <div class="metric"><span class="metric-icon">↗</span><div><small>Ветер</small><strong id="wind-value">—</strong></div></div>
+            <div class="metric"><span class="metric-icon">◌</span><div><small>Влажность</small><strong id="humidity-value">—</strong></div></div>
+            <div class="metric"><span class="metric-icon">☂</span><div><small>Осадки</small><strong id="rain-value">—</strong></div></div>
+          </div>
+        </article>
+
+        <article class="forecast-card hourly-card">
+          <div class="section-heading"><div><p class="eyebrow">БЛИЖАЙШИЕ ЧАСЫ</p><h2>Почасовой прогноз</h2></div><span class="heading-icon">◷</span></div>
+          <div class="hourly-list" id="hourly-list"><div class="loading-state">Загружаем почасовой прогноз…</div></div>
+        </article>
+
+        <article class="forecast-card week-card">
+          <div class="section-heading"><div><p class="eyebrow">ПРОГНОЗ НА 7 ДНЕЙ</p><h2>На неделю</h2></div><span class="heading-icon">▦</span></div>
+          <div class="week-list" id="week-list"><div class="loading-state">Загружаем прогноз на неделю…</div></div>
+        </article>
+
+        <article class="sun-card">
+          <div class="section-heading"><div><p class="eyebrow">СОЛНЦЕ</p><h2>Световой день</h2></div><span class="heading-icon sun-heading">☼</span></div>
+          <div class="sun-times"><div><span class="sun-icon sunrise">↗</span><small>Восход</small><strong id="sunrise-time">—</strong></div><div class="sun-track"><span>☀</span></div><div><span class="sun-icon sunset">↘</span><small>Закат</small><strong id="sunset-time">—</strong></div></div>
+        </article>
+      </section>
+
+      <section class="saved-section">
+        <div class="saved-heading"><div><p class="eyebrow">БЫСТРЫЙ ДОСТУП</p><h2>Сохранённые места</h2></div><span class="saved-hint">Нажмите ♡, чтобы добавить город</span></div>
+        <div class="saved-list" id="saved-list"><span class="empty-saved">Пока нет сохранённых городов</span></div>
+      </section>
+      <div class="status-line" id="status-line" role="status" aria-live="polite"></div>
+      <footer><span>Прогноз обновляется автоматически</span><span>Данные: Open-Meteo</span></footer>
+    </div>
+  </main>
+</body>
+</html>
