@@ -87,7 +87,10 @@ async function requestJson(url) {
 }
 
 async function resolvePlace(city) {
-  const normalized = city.toLocaleLowerCase('ru').replaceAll('ё', 'е').replace(/[^\p{L}\p{N}]/gu, '');
+  const normalized = city.toLocaleLowerCase('ru')
+    .replaceAll('ё', 'е')
+    .replaceAll('ө', 'о')
+    .replace(/[^\p{L}\p{N}]/gu, '');
   const issykKulAliases = ['ыссыккол', 'ысыккол', 'иссыккуль', 'иссыккул', 'issykul', 'issykkul', 'issykul'];
   const isIssykKul = issykKulAliases.includes(normalized);
   const searchName = isIssykKul ? 'Cholpon-Ata' : city;

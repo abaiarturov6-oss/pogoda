@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pogoda-shell-v2';
+const CACHE_NAME = 'pogoda-shell-v3';
 const APP_SHELL = [
   './',
   './index.html',
