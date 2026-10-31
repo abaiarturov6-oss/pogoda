@@ -9,3 +9,10 @@
 .install-button{height:36px;padding:0 11px;border:1px solid #dce6fa;border-radius:9px;background:#f3f6ff;color:#426fd7;font-size:10px;font-weight:600;white-space:nowrap}.install-button span{margin-right:4px;font-size:14px}.install-button:hover{background:#e8efff}.install-hint{margin:-8px 0 18px;padding:12px 15px;border:1px solid #dce6fa;border-radius:10px;background:#f3f6ff;color:#526987;font-size:11px;line-height:1.5}.install-hint[hidden]{display:none}
 @media(max-width:560px){.top-actions{gap:5px}.install-button{height:34px;padding:0 8px;font-size:9px}.location-button{padding:0 7px}}
 
+@media(max-width:560px){.dashboard-grid{grid-template-columns:minmax(0,1fr)}.dashboard-grid>*{min-width:0}.hourly-list{min-width:0}.day-row{grid-template-columns:minmax(0,1fr) 28px minmax(0,1.2fr) auto;gap:4px}.day-summary{white-space:normal}}
+
+/* Адаптация под телефоны: правила используют классы текущей разметки сайта. */
+@media(max-width:600px){.content{padding:16px 12px 14px}.topbar{padding:12px;gap:10px}.top-actions{gap:6px;flex-wrap:wrap;justify-content:flex-end}.location-button{white-space:normal}.dashboard-grid{grid-template-columns:minmax(0,1fr)}.dashboard-grid>*{grid-column:1/-1;min-width:0;width:100%}.current-card,.forecast-card,.sun-card{width:100%;max-width:100%;margin-bottom:0}.current-card{padding:15px}.forecast-card,.sun-card{padding:15px}.current-temp{font-size:52px}.hourly-list{min-width:0;overflow-x:auto;padding-bottom:10px}.hour-item{flex:0 0 65px;min-width:65px}.week-list{width:100%}.day-row{width:100%;grid-template-columns:minmax(0,1fr) 28px minmax(0,1.2fr) auto;gap:4px}.day-summary{white-space:normal}.saved-section{padding:15px}.saved-heading{align-items:flex-start;gap:8px;flex-wrap:wrap}.saved-hint{white-space:normal}.sun-card{padding:15px}footer{gap:8px;flex-wrap:wrap}}
+@media(max-width:360px){html,body{min-width:0}.content{padding:12px 8px}.current-temp{font-size:44px}.day-row{font-size:11px}.forecast-card,.sun-card{padding:12px}}
+html,body{min-width:0}
+

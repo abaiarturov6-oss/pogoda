@@ -1,9 +1,9 @@
-const CACHE_NAME = 'pogoda-shell-v5';
+const CACHE_NAME = 'pogoda-shell-v9';
 const APP_SHELL = [
   './',
   './index.html',
-  './style.css',
-  './app.js?v=4',
+  './style.css?v=4',
+  './app.js?v=5',
   './manifest.webmanifest',
   './icon.svg',
   './icon-192.png',

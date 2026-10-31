@@ -67,10 +67,7 @@ installButton.addEventListener('click', async () => {
     installPrompt = null;
     return;
   }
-  installHint.hidden = false;
-  installHint.textContent = /iphone|ipad|ipod/i.test(navigator.userAgent)
-    ? 'Чтобы установить сайт на iPhone: нажмите «Поделиться» в Safari, затем «На экран Домой». '
-    : 'Откройте меню браузера и выберите «Установить приложение» или «Добавить на главный экран».';
+  return;
 });
 
 window.addEventListener('appinstalled', () => {
