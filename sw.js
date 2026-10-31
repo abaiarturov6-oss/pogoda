@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pogoda-shell-v4';
+const CACHE_NAME = 'pogoda-shell-v5';
 const APP_SHELL = [
   './',
   './index.html',
@@ -27,6 +27,15 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || requestUrl.origin !== self.location.origin) return;
 
   event.respondWith((async () => {
+    if (event.request.mode === 'navigate') {
+      try {
+        const response = await fetch(event.request);
+        if (response.ok) (await caches.open(CACHE_NAME)).put(event.request, response.clone());
+        return response;
+      } catch {
+        return caches.match('./index.html');
+      }
+    }
     const cached = await caches.match(event.request);
     if (cached) {
       fetch(event.request).then((response) => {
@@ -39,7 +48,6 @@ self.addEventListener('fetch', (event) => {
       if (response.ok) (await caches.open(CACHE_NAME)).put(event.request, response.clone());
       return response;
     } catch (error) {
-      if (event.request.mode === 'navigate') return caches.match('./index.html');
       throw error;
     }
   })());
