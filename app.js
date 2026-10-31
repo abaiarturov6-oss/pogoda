@@ -284,3 +284,27 @@ if ('serviceWorker' in navigator) {
 if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
   installButton.hidden = true;
 }
+
+const promoShareButton = document.getElementById('promo-share-button');
+promoShareButton?.addEventListener('click', async () => {
+  const shareUrl = window.location.href.split('#')[0].split('?')[0];
+  const shareData = {
+    title: 'Погода Кыргызстана',
+    text: 'Прогноз погоды для городов Кыргызстана — сейчас, по часам и на неделю.',
+    url: shareUrl
+  };
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+    } catch (error) {
+      if (error.name !== 'AbortError') showStatus('Не удалось поделиться ссылкой.');
+    }
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    showStatus('Ссылка скопирована — отправь её друзьям!');
+  } catch {
+    showStatus(`Ссылка на сайт: ${shareUrl}`);
+  }
+});
