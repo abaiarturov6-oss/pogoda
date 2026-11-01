@@ -220,7 +220,7 @@ let favorites = readFavorites();
 let installPrompt = null;
 let weatherNotificationsEnabled = localStorage.getItem('weather-notifications-enabled') === 'true';
 let weatherNotificationTypes = readNotificationTypes();
-let autoLocationEnabled = localStorage.getItem('auto-location-enabled') !== 'false';
+let autoLocationEnabled = localStorage.getItem('auto-location-enabled') === 'true';
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -756,8 +756,8 @@ promoShareButton?.addEventListener('click', async () => {
     </fieldset>
     <fieldset class="location-settings">
       <legend>Местоположение</legend>
-      <label><input id="auto-location-toggle" type="checkbox" checked> Определять автоматически при открытии сайта</label>
-      <p>Если выключить, сайт покажет прогноз для Бишкека. Другой город можно выбрать через поиск.</p>
+      <label><input id="auto-location-toggle" type="checkbox"> Определять автоматически при открытии сайта</label>
+      <p>По умолчанию показывается Бишкек. Включите GPS для прогноза рядом с вами; другой город можно выбрать через поиск.</p>
     </fieldset>
     <p class="settings-note">Выбранные события сохраняются на этом устройстве.</p>
   </dialog>

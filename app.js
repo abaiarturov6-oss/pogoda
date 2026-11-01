@@ -28,7 +28,7 @@ let favorites = readFavorites();
 let installPrompt = null;
 let weatherNotificationsEnabled = localStorage.getItem('weather-notifications-enabled') === 'true';
 let weatherNotificationTypes = readNotificationTypes();
-let autoLocationEnabled = localStorage.getItem('auto-location-enabled') !== 'false';
+let autoLocationEnabled = localStorage.getItem('auto-location-enabled') === 'true';
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
