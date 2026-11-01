@@ -4,20 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#f4f7fb">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="stylesheet" href="style.css?v=15">
+  <script src="app.js?v=17" defer></script>
   <meta name="description" content="Узнай погоду в городах Кыргызстана: прогноз на сегодня, почасовая погода, неделя, ветер и осадки.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Погода Кыргызстана — прогноз для вашего города">
   <meta property="og:description" content="Точный прогноз погоды по часам и на неделю. Найди свой город и поделись сайтом с друзьями.">
   <meta property="og:url" content="https://abaiarturov6-oss.github.io/pogoda/">
   <title>Погода — прогноз для вашего города</title>
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="./icon-192.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=5">
-  <script src="app.js?v=6" defer></script>
+
+
 </head>
 <body>
   <main class="page-shell">
@@ -30,13 +29,16 @@
       </form>
       <div class="top-actions">
         <button class="install-button" id="install-button" type="button"><span>↓</span> Установить</button>
-        <button class="unit-toggle" id="unit-toggle" type="button" aria-label="Переключить градусы Цельсия и Фаренгейта"><span class="unit-active">°C</span><span>°F</span></button>
+
+        <button class="unit-toggle" id="unit-toggle" type="button" aria-label="Переключить градусы Цельсия и Фаренгейта"><span class="unit-active">°C</span></button>
         <button class="location-button" id="locate-button" type="button" aria-label="Найти погоду рядом с вами"><span>⌖</span> Моё местоположение</button>
+        <button class="settings-open" id="settings-open" type="button" aria-haspopup="dialog" aria-controls="settings-dialog" aria-label="Открыть настройки">⚙ Настройки</button>
       </div>
     </header>
 
     <div class="content">
       <div class="install-hint" id="install-hint" role="status" hidden></div>
+
       <section class="intro-row">
         <div><p class="eyebrow"><span class="live-dot"></span> ПРОГНОЗ ПОГОДЫ</p><h1 id="place-title">Ысык-Көл</h1><p class="subheading" id="place-subtitle">Кыргызстан · погода сейчас</p></div>
         <div class="updated"><span class="updated-icon">◷</span><span id="updated-label">Обновляем прогноз…</span></div>
@@ -75,18 +77,37 @@
         <div class="saved-heading"><div><p class="eyebrow">БЫСТРЫЙ ДОСТУП</p><h2>Сохранённые места</h2></div><span class="saved-hint">Нажмите ♡, чтобы добавить город</span></div>
         <div class="saved-list" id="saved-list"><span class="empty-saved">Пока нет сохранённых городов</span></div>
       </section>
-      <section class="promo-banner" aria-label="Поделитесь сайтом о погоде">
-        <div class="promo-mark" aria-hidden="true">☀</div>
-        <div class="promo-copy">
-          <p class="eyebrow">ПОГОДА КЫРГЫЗСТАНА</p>
-          <h2>Прогноз для твоего города — всегда под рукой</h2>
-          <p>Погода сейчас, по часам и на неделю. Найди свой город и поделись сайтом с друзьями.</p>
-        </div>
-        <button class="promo-share" id="promo-share-button" type="button">Поделиться сайтом</button>
-      </section>
+
       <div class="status-line" id="status-line" role="status" aria-live="polite"></div>
       <footer><span>Прогноз обновляется автоматически</span><span>Данные: Open-Meteo</span></footer>
     </div>
   </main>
+
+  <dialog class="settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+    <div class="settings-heading">
+      <div><p class="eyebrow">ПЕРСОНАЛИЗАЦИЯ</p><h2 id="settings-title">Настройки</h2></div>
+      <button class="settings-close" id="settings-close" type="button" aria-label="Закрыть настройки">×</button>
+    </div>
+    <section class="settings-notifications" aria-labelledby="notifications-title">
+      <div class="settings-notifications-heading">
+        <h3 id="notifications-title">Уведомления о погоде</h3>
+        <button class="notifications-toggle" id="notifications-toggle" type="button" aria-pressed="false">Включить</button>
+      </div>
+      <p id="notifications-status" role="status" aria-live="polite">Сообщим о дожде, снеге или грозе в ближайшие 6 часов, пока сайт открыт.</p>
+    </section>
+    <fieldset class="notification-settings" aria-label="Какие погодные события отслеживать">
+      <legend>Уведомлять о погоде:</legend>
+      <label><input id="notify-rain" type="checkbox" checked> Дожде</label>
+      <label><input id="notify-snow" type="checkbox" checked> Снеге</label>
+      <label><input id="notify-storm" type="checkbox" checked> Грозе</label>
+    </fieldset>
+    <fieldset class="location-settings">
+      <legend>Местоположение</legend>
+      <label><input id="auto-location-toggle" type="checkbox" checked> Определять автоматически при открытии сайта</label>
+      <p>Если выключить, сайт покажет прогноз для района Ысык-Көл. Местоположение можно найти кнопкой вверху.</p>
+    </fieldset>
+    <p class="settings-note">Выбранные события сохраняются на этом устройстве.</p>
+  </dialog>
+
 </body>
 </html>

@@ -5,14 +5,28 @@ const hourlyList = document.querySelector('#hourly-list');
 const weekList = document.querySelector('#week-list');
 const favoriteButton = document.querySelector('#favorite-button');
 const unitToggle = document.querySelector('#unit-toggle');
+const locationButton = document.querySelector('#locate-button');
 const installButton = document.querySelector('#install-button');
 const installHint = document.querySelector('#install-hint');
-
+const notificationsToggle = document.querySelector('#notifications-toggle');
+const notificationsStatus = document.querySelector('#notifications-status');
+const settingsDialog = document.querySelector('#settings-dialog');
+const settingsOpen = document.querySelector('#settings-open');
+const settingsClose = document.querySelector('#settings-close');
+const autoLocationToggle = document.querySelector('#auto-location-toggle');
+const notificationSettings = {
+  rain: document.querySelector('#notify-rain'),
+  snow: document.querySelector('#notify-snow'),
+  storm: document.querySelector('#notify-storm')
+};
 let activeCity = 'Ысык-Көл';
 let weatherData = null;
 let isFahrenheit = false;
 let favorites = readFavorites();
 let installPrompt = null;
+let weatherNotificationsEnabled = localStorage.getItem('weather-notifications-enabled') === 'true';
+let weatherNotificationTypes = readNotificationTypes();
+let autoLocationEnabled = localStorage.getItem('auto-location-enabled') !== 'false';
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -38,21 +52,99 @@ favoriteButton.addEventListener('click', () => {
   if (weatherData) updatePlace(weatherData.place);
 });
 
-document.querySelector('#locate-button').addEventListener('click', () => {
+locationButton.addEventListener('click', () => {
   if (!navigator.geolocation) {
-    showStatus('Браузер не поддерживает определение местоположения.');
+    showStatus('Этот браузер не поддерживает поиск местоположения.');
     return;
   }
-  showStatus('Определяем ваше местоположение…');
+  if (!window.isSecureContext) {
+    showStatus('Чтобы найти ваше местоположение, откройте сайт по HTTPS или на localhost.');
+    return;
+  }
+
+  locationButton.disabled = true;
+  locationButton.setAttribute('aria-busy', 'true');
+  showStatus('Ищем ваше местоположение… Разрешите доступ, если браузер спросит.');
   navigator.geolocation.getCurrentPosition(
-    ({ coords }) => loadWeather('', coords.latitude, coords.longitude),
-    (error) => {
-      if (error.code === error.PERMISSION_DENIED) showStatus('Разрешите браузеру доступ к местоположению, чтобы узнать погоду рядом с вами.');
-      else if (error.code === error.POSITION_UNAVAILABLE) showStatus('Не удалось определить местоположение устройства.');
-      else showStatus('Поиск местоположения занял слишком много времени. Попробуйте ещё раз.');
+    async ({ coords }) => {
+      showStatus('Местоположение найдено. Загружаем погоду…');
+      try {
+        const loaded = await loadWeather('', coords.latitude, coords.longitude);
+        if (loaded) showStatus('Показана погода по вашему местоположению.');
+      } finally {
+        locationButton.disabled = false;
+        locationButton.removeAttribute('aria-busy');
+      }
     },
-    { enableHighAccuracy: true, timeout: 20000, maximumAge: 300000 }
+    (error) => {
+      const message = error.code === error.PERMISSION_DENIED
+        ? 'Нет доступа к местоположению. Разрешите геолокацию для сайта в настройках браузера и попробуйте снова.'
+        : error.code === error.POSITION_UNAVAILABLE
+          ? 'Устройство не смогло определить местоположение. Проверьте GPS и попробуйте снова.'
+          : 'Поиск местоположения занял слишком много времени. Проверьте GPS и попробуйте снова.';
+      showStatus(message);
+      locationButton.disabled = false;
+      locationButton.removeAttribute('aria-busy');
+    },
+    { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
   );
+});
+
+notificationsToggle.addEventListener('click', async () => {
+  if (weatherNotificationsEnabled) {
+    weatherNotificationsEnabled = false;
+    localStorage.setItem('weather-notifications-enabled', 'false');
+    updateNotificationsUI();
+    return;
+  }
+  if (!('Notification' in window)) {
+    notificationsStatus.textContent = 'Этот браузер не поддерживает уведомления.';
+    return;
+  }
+  if (!window.isSecureContext) {
+    notificationsStatus.textContent = 'Для уведомлений откройте сайт по HTTPS.';
+    return;
+  }
+
+  let permission;
+  try {
+    permission = await Notification.requestPermission();
+  } catch (error) {
+    notificationsStatus.textContent = `Не удалось запросить разрешение: ${error.message}`;
+    return;
+  }
+  if (permission !== 'granted') {
+    notificationsStatus.textContent = permission === 'denied'
+      ? 'Разрешите уведомления для сайта в настройках браузера.'
+      : 'Разрешите уведомления, чтобы получать прогноз.';
+    return;
+  }
+
+  weatherNotificationsEnabled = true;
+  localStorage.setItem('weather-notifications-enabled', 'true');
+  updateNotificationsUI();
+  await checkWeatherNotifications();
+});
+
+Object.entries(notificationSettings).forEach(([type, checkbox]) => {
+  checkbox.checked = weatherNotificationTypes[type];
+  checkbox.addEventListener('change', async () => {
+    weatherNotificationTypes[type] = checkbox.checked;
+    localStorage.setItem('weather-notification-types', JSON.stringify(weatherNotificationTypes));
+    await checkWeatherNotifications();
+  });
+});
+
+autoLocationToggle.checked = autoLocationEnabled;
+autoLocationToggle.addEventListener('change', () => {
+  autoLocationEnabled = autoLocationToggle.checked;
+  localStorage.setItem('auto-location-enabled', String(autoLocationEnabled));
+});
+
+settingsOpen.addEventListener('click', () => settingsDialog.showModal());
+settingsClose.addEventListener('click', () => settingsDialog.close());
+settingsDialog.addEventListener('click', (event) => {
+  if (event.target === settingsDialog) settingsDialog.close();
 });
 
 window.addEventListener('beforeinstallprompt', (event) => {
@@ -60,7 +152,7 @@ window.addEventListener('beforeinstallprompt', (event) => {
   installPrompt = event;
 });
 
-installButton.addEventListener('click', async () => {
+installButton?.addEventListener('click', async () => {
   if (installPrompt) {
     installPrompt.prompt();
     await installPrompt.userChoice;
@@ -71,6 +163,7 @@ installButton.addEventListener('click', async () => {
 });
 
 window.addEventListener('appinstalled', () => {
+  if (!installHint || !installButton) return;
   installHint.hidden = false;
   installHint.textContent = 'Погода установлена на телефон.';
   installButton.hidden = true;
@@ -125,7 +218,7 @@ async function fetchForecast(place) {
     latitude: String(place.latitude),
     longitude: String(place.longitude),
     current: 'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,wind_speed_10m',
-    hourly: 'temperature_2m,precipitation_probability,weather_code',
+    hourly: 'temperature_2m,precipitation_probability,weather_code,is_day',
     daily: 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max',
     timezone: 'auto',
     forecast_days: '7'
@@ -137,25 +230,35 @@ async function fetchForecast(place) {
 async function loadWeather(city, latitude, longitude) {
   form.classList.add('loading');
   showStatus('Загружаем прогноз погоды…');
+  let loaded = false;
   try {
     const place = latitude !== undefined
       ? { name: 'Моё местоположение', latitude, longitude, country: '' }
       : await resolvePlace(city);
     weatherData = await fetchForecast(place);
-    activeCity = place.name === 'Ысык-Көл' ? 'Ысык-Көл' : city || place.name;
+    activeCity = place.name === 'Ысык-Көл'
+      ? 'Ысык-Көл'
+      : place.name === 'Моё местоположение'
+        ? 'Бишкек'
+        : city || place.name;
     updatePlace(weatherData.place);
     renderWeather();
     showStatus('');
+    await checkWeatherNotifications();
+    loaded = true;
   } catch (error) {
     showStatus(error.message);
   } finally {
     form.classList.remove('loading');
   }
+  return loaded;
 }
 
 function updatePlace(place) {
   document.querySelector('#place-title').textContent = activeCity;
   const details = place.name === 'Моё местоположение'
+    ? 'Кыргызстан · ваше местоположение'
+    : place.name === 'бишкек'
     ? 'Погода рядом с вами'
     : [place.admin1, place.country].filter(Boolean).join(' · ');
   document.querySelector('#place-subtitle').textContent = details || 'Прогноз погоды';
@@ -177,19 +280,24 @@ function renderWeather() {
   document.querySelector('#rain-value').textContent = `${Number(current.precipitation).toLocaleString('ru-RU')} мм`;
   document.querySelector('#sunrise-time').textContent = formatTime(daily.sunrise[0]);
   document.querySelector('#sunset-time').textContent = formatTime(daily.sunset[0]);
-  renderHourly(hourly, current.time);
+  renderHourly(hourly, current);
   renderWeek(daily);
   renderFavorites();
 }
 
-function renderHourly(hourly, currentTime) {
-  let start = hourly.time.findIndex((time) => time >= currentTime.slice(0, 13));
+function renderHourly(hourly, current) {
+  const currentHour = current.time.slice(0, 13);
+  let start = hourly.time.findIndex((time) => time.slice(0, 13) === currentHour);
+  if (start < 0) start = hourly.time.findIndex((time) => time >= current.time);
   if (start < 0) start = 0;
   const items = hourly.time.slice(start, start + 12).map((time, offset) => {
     const index = start + offset;
     const label = offset === 0 ? 'Сейчас' : formatTime(time);
     const rain = hourly.precipitation_probability[index];
-    return `<div class="hour-item"><span class="hour-time">${label}</span><span class="hour-icon">${weatherIcon(hourly.weather_code[index], 1)}</span><strong class="hour-temp">${Math.round(convertTemp(hourly.temperature_2m[index]))}°</strong><span class="hour-rain">${rain ? `${Math.round(rain)}% дождя` : ''}</span></div>`;
+    const temperature = offset === 0 ? current.temperature_2m : hourly.temperature_2m[index];
+    const weatherCode = offset === 0 ? current.weather_code : hourly.weather_code[index];
+    const isDay = offset === 0 ? current.is_day : hourly.is_day[index];
+    return `<div class="hour-item"><span class="hour-time">${label}</span><span class="hour-icon">${weatherIcon(weatherCode, isDay)}</span><strong class="hour-temp">${Math.round(convertTemp(temperature))}°</strong><span class="hour-rain">${rain ? `${Math.round(rain)}% дождя` : ''}</span></div>`;
   });
   hourlyList.innerHTML = items.join('');
 }
@@ -255,7 +363,7 @@ function describeWeather(code) {
 
 function weatherIcon(code, isDay = 1) {
   if (code === 0) return isDay ? '☀️' : '🌙';
-  if (code <= 2) return '🌤️';
+  if (code <= 2) return isDay ? '🌤️' : code === 1 ? '🌙' : '☁️';
   if (code === 3) return '☁️';
   if (code < 50) return '🌫️';
   if (code < 70) return '🌧️';
@@ -275,13 +383,125 @@ function showStatus(message) {
   statusLine.textContent = message;
 }
 
+function updateNotificationsUI() {
+  if (weatherNotificationsEnabled && (!('Notification' in window) || Notification.permission !== 'granted')) {
+    weatherNotificationsEnabled = false;
+    localStorage.setItem('weather-notifications-enabled', 'false');
+  }
+  notificationsToggle.textContent = weatherNotificationsEnabled ? 'Выключить' : 'Включить';
+  notificationsToggle.setAttribute('aria-pressed', String(weatherNotificationsEnabled));
+  notificationsStatus.textContent = weatherNotificationsEnabled
+    ? ''
+    : 'Сообщим о дожде, снеге или грозе в ближайшие 6 часов, пока сайт открыт.';
+}
+
+function readNotificationTypes() {
+  const defaults = { rain: true, snow: true, storm: true };
+  try {
+    const saved = JSON.parse(localStorage.getItem('weather-notification-types') || '{}');
+    return Object.fromEntries(Object.keys(defaults).map((type) => [type, typeof saved[type] === 'boolean' ? saved[type] : defaults[type]]));
+  } catch {
+    return defaults;
+  }
+}
+
+function weatherAlertCategory(code) {
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'rain';
+  if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return 'snow';
+  if (code >= 95 && code <= 99) return 'storm';
+  return null;
+}
+
+async function checkWeatherNotifications() {
+  if (!weatherNotificationsEnabled || !('Notification' in window) || Notification.permission !== 'granted' || !weatherData) return;
+
+  const { hourly, current } = weatherData;
+  let start = hourly.time.findIndex((time) => time.slice(0, 13) === current.time.slice(0, 13));
+  if (start < 0) start = hourly.time.findIndex((time) => time >= current.time);
+  if (start < 0) start = 0;
+
+  let alertIndex = -1;
+  for (let index = start; index < Math.min(start + 7, hourly.time.length); index += 1) {
+    const category = weatherAlertCategory(hourly.weather_code[index]);
+    if (category && weatherNotificationTypes[category]) {
+      alertIndex = index;
+      break;
+    }
+  }
+  if (alertIndex < 0) return;
+
+  const category = weatherAlertCategory(hourly.weather_code[alertIndex]);
+  const notificationKey = `last-weather-notification-${encodeURIComponent(activeCity)}-${category}`;
+  const previousNotification = Number(localStorage.getItem(notificationKey) || 0);
+  if (previousNotification && Date.now() - previousNotification < 6 * 60 * 60 * 1000) return;
+
+  const offset = alertIndex - start;
+  const timing = offset === 0 ? 'Сейчас' : `Примерно через ${offset} ч.`;
+  const options = {
+    body: `${timing}: ${category === 'storm' ? 'гроза' : category === 'snow' ? 'снег' : 'дождь'}.`,
+    icon: './icon-192.png',
+    tag: `${activeCity}:${category}`
+  };
+  try {
+    const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+    if (registration) await registration.showNotification(`Погода в ${activeCity}`, options);
+    else new Notification(`Погода в ${activeCity}`, options);
+  } catch (error) {
+    showStatus(`Не удалось показать уведомление: ${error.message}`);
+    return;
+  }
+  localStorage.setItem(notificationKey, String(Date.now()));
+}
+
+function loadWeatherNearUser() {
+  if (!autoLocationEnabled) {
+    loadWeather(activeCity);
+    return;
+  }
+  if (!navigator.geolocation || window.location.protocol === 'file:') {
+    loadWeather(activeCity).then((loaded) => {
+      if (loaded && !navigator.geolocation) showStatus(`Геолокация недоступна. Сейчас показана погода: ${activeCity}.`);
+    });
+    return;
+  }
+
+  showStatus('Определяем ваше местоположение…');
+  navigator.geolocation.getCurrentPosition(
+    ({ coords }) => loadWeather('', coords.latitude, coords.longitude),
+    (error) => {
+      const message = error.code === error.PERMISSION_DENIED
+        ? 'Разрешите доступ к местоположению в браузере'
+        : 'Не удалось определить местоположение';
+      loadWeather(activeCity).then((loaded) => {
+        if (loaded) showStatus(`${message}. Пока показана погода: ${activeCity}.`);
+      });
+    },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 600000 }
+  );
+}
+
 renderFavorites();
-loadWeather(activeCity);
+updateNotificationsUI();
+loadWeatherNearUser();
+window.setInterval(async () => {
+  if (!weatherData) return;
+  const place = weatherData.place;
+  try {
+    const refreshedWeather = await fetchForecast(place);
+    if (weatherData?.place !== place) return;
+    weatherData = refreshedWeather;
+    updatePlace(place);
+    renderWeather();
+    await checkWeatherNotifications();
+  } catch (error) {
+    showStatus(`Не удалось обновить температуру: ${error.message}`);
+  }
+}, 15 * 60 * 1000);
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
-if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+if (installButton && (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone)) {
   installButton.hidden = true;
 }
 
