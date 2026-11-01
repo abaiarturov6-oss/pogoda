@@ -183,6 +183,16 @@ async function resolvePlace(city) {
     .replaceAll('ё', 'е')
     .replaceAll('ө', 'о')
     .replace(/[^\p{L}\p{N}]/gu, '');
+  if (['бишкек', 'bishkek'].includes(normalized)) {
+    return {
+      name: 'Бишкек',
+      latitude: 42.87,
+      longitude: 74.59,
+      admin1: 'Бишкек',
+      country: 'Кыргызстан',
+      country_code: 'KG'
+    };
+  }
   const issykKulAliases = ['ыссыккол', 'ысыккол', 'иссыккуль', 'иссыккул', 'issykul', 'issykkul', 'issykul'];
   const isIssykKul = issykKulAliases.includes(normalized);
   const searchName = isIssykKul ? 'Cholpon-Ata' : city;
