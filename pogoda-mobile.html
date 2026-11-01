@@ -146,7 +146,7 @@ button,input{transition:border-color .18s ease,background-color .18s ease,box-sh
     <div class="content">
 
       <section class="intro-row">
-        <div><p class="eyebrow"><span class="live-dot"></span> ПРОГНОЗ ПОГОДЫ</p><h1 id="place-title">Ысык-Көл</h1><p class="subheading" id="place-subtitle">Кыргызстан · погода сейчас</p></div>
+        <div><p class="eyebrow"><span class="live-dot"></span> ПРОГНОЗ ПОГОДЫ</p><h1 id="place-title">Бишкек</h1><p class="subheading" id="place-subtitle">Кыргызстан · погода сейчас</p></div>
         <div class="updated"><span class="updated-icon">◷</span><span id="updated-label">Обновляем прогноз…</span></div>
       </section>
 
@@ -189,6 +189,7 @@ button,input{transition:border-color .18s ease,background-color .18s ease,box-sh
     </div>
   </main>
 <script>
+document.addEventListener('DOMContentLoaded', () => {
 const form = document.querySelector('#search-form');
 const cityInput = document.querySelector('#city-input');
 const statusLine = document.querySelector('#status-line');
@@ -210,7 +211,7 @@ const notificationSettings = {
   snow: document.querySelector('#notify-snow'),
   storm: document.querySelector('#notify-storm')
 };
-let activeCity = 'Ысык-Көл';
+let activeCity = 'Бишкек';
 let weatherData = null;
 let isFahrenheit = false;
 let favorites = readFavorites();
@@ -695,6 +696,7 @@ if ('serviceWorker' in navigator) {
 if (installButton && (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone)) {
   installButton.hidden = true;
 }
+});
 
 const promoShareButton = document.getElementById('promo-share-button');
 promoShareButton?.addEventListener('click', async () => {
@@ -741,7 +743,7 @@ promoShareButton?.addEventListener('click', async () => {
     <fieldset class="location-settings">
       <legend>Местоположение</legend>
       <label><input id="auto-location-toggle" type="checkbox" checked> Определять автоматически при открытии сайта</label>
-      <p>Если выключить, сайт покажет прогноз для района Ысык-Көл. Местоположение можно найти кнопкой вверху.</p>
+      <p>Если выключить, сайт покажет прогноз для Бишкека. Другой город можно выбрать через поиск.</p>
     </fieldset>
     <p class="settings-note">Выбранные события сохраняются на этом устройстве.</p>
   </dialog>

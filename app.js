@@ -19,7 +19,7 @@ const notificationSettings = {
   snow: document.querySelector('#notify-snow'),
   storm: document.querySelector('#notify-storm')
 };
-let activeCity = 'Ысык-Көл';
+let activeCity = 'Бишкек';
 let weatherData = null;
 let isFahrenheit = false;
 let favorites = readFavorites();
