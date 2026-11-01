@@ -21,6 +21,8 @@ const notificationSettings = {
 };
 let activeCity = 'Бишкек';
 let weatherData = null;
+let lastWeatherRefresh = 0;
+let isRefreshingWeather = false;
 let isFahrenheit = false;
 let favorites = readFavorites();
 let installPrompt = null;
@@ -236,6 +238,7 @@ async function loadWeather(city, latitude, longitude) {
       ? { name: 'Моё местоположение', latitude, longitude, country: '' }
       : await resolvePlace(city);
     weatherData = await fetchForecast(place);
+    lastWeatherRefresh = Date.now();
     activeCity = place.name === 'Ысык-Көл'
       ? 'Ысык-Көл'
       : place.name === 'Моё местоположение'
@@ -252,6 +255,27 @@ async function loadWeather(city, latitude, longitude) {
     form.classList.remove('loading');
   }
   return loaded;
+}
+
+async function refreshWeather() {
+  if (!weatherData || document.visibilityState !== 'visible' || isRefreshingWeather) return;
+  if (Date.now() - lastWeatherRefresh < 5 * 60 * 1000) return;
+
+  const place = weatherData.place;
+  isRefreshingWeather = true;
+  try {
+    const refreshedWeather = await fetchForecast(place);
+    if (weatherData?.place !== place) return;
+    weatherData = refreshedWeather;
+    lastWeatherRefresh = Date.now();
+    updatePlace(place);
+    renderWeather();
+    await checkWeatherNotifications();
+  } catch (error) {
+    showStatus(`Не удалось обновить температуру: ${error.message}`);
+  } finally {
+    isRefreshingWeather = false;
+  }
 }
 
 function updatePlace(place) {
@@ -483,20 +507,10 @@ function loadWeatherNearUser() {
 renderFavorites();
 updateNotificationsUI();
 loadWeatherNearUser();
-window.setInterval(async () => {
-  if (!weatherData) return;
-  const place = weatherData.place;
-  try {
-    const refreshedWeather = await fetchForecast(place);
-    if (weatherData?.place !== place) return;
-    weatherData = refreshedWeather;
-    updatePlace(place);
-    renderWeather();
-    await checkWeatherNotifications();
-  } catch (error) {
-    showStatus(`Не удалось обновить температуру: ${error.message}`);
-  }
-}, 15 * 60 * 1000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshWeather();
+});
+window.setInterval(refreshWeather, 15 * 60 * 1000);
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
